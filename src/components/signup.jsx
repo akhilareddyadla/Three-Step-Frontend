@@ -29,9 +29,10 @@ const Signup = () => {
       if (res.ok) {
         const responseData = await res.json(); // Parse JSON response
         console.log("Response data:", responseData);
+        localStorage.setItem("userId", responseData.user_id);
 
         // Navigate to the next page with the response data
-        navigate("/Pattern_Recognition", { state: { data: responseData } });
+        navigate("/Pattern_Recognition");
       } else {
         const errorMessage = await res.text(); // Parse error message from response
         console.error("Error response:", errorMessage);
@@ -48,7 +49,10 @@ const Signup = () => {
         <h2 className="text-2xl font-bold mb-6 text-center">SignUp</h2>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700"
+            >
               Email
             </label>
             <input
@@ -62,7 +66,10 @@ const Signup = () => {
             />
           </div>
           <div>
-            <label htmlFor="text" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="text"
+              className="block text-sm font-medium text-gray-700"
+            >
               Username
             </label>
             <input
@@ -77,7 +84,10 @@ const Signup = () => {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700"
+            >
               Password
             </label>
             <input

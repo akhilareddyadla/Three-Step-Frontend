@@ -1,13 +1,12 @@
-import React, { useState, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import Webcam from 'react-webcam';
+import React, { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import Webcam from "react-webcam";
 
 const FacialCapture = () => {
-  const location = useLocation();
-  const userId = location.state?.data?.data?.userid;
-  console.log("User---",userId)
+  let userId = localStorage.getItem("userId");
+  console.log("User---", userId);
   const [imageSrc, setImageSrc] = useState(null);
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState("");
   const webcamRef = useRef(null);
   const navigate = useNavigate();
 
@@ -18,51 +17,60 @@ const FacialCapture = () => {
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    const reader = new FileReader();
-
-    reader.onloadend = () => {
-      setImageSrc(reader.result);
-    };
-
-    if (file) {
-      reader.readAsDataURL(file);
-    }
+    setImageSrc(URL.createObjectURL(file)); // display selected image
   };
 
   const handleSubmitImage = () => {
     if (!imageSrc) {
-      setStatus('No image to submit');
+      setStatus("No image to submit");
       return;
     }
 
-    const imageData = {
-      user_id: userId,
-      image: imageSrc,
-    };
-    console.log("Data",location.state)
-    console.log("UserId:",userId)
+    const formData = new FormData();
+    formData.append("user_id", userId);
 
-    fetch('http://127.0.0.1:8000/api/facial_capture', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(imageData),
+    // Convert base64 image to a Blob
+    if (imageSrc.startsWith("data:image")) {
+      const blob = dataURLtoBlob(imageSrc); // Convert base64 string to Blob
+      formData.append("file", blob, `${userId}.jpg`); // Append the file with a name
+    } else {
+      // If it's not a base64 image, we assume it's a selected file
+      const file = document.querySelector('input[type="file"]').files[0];
+      formData.append("file", file);
+    }
+
+    fetch("http://127.0.0.1:8000/facial-register/", {
+      method: "POST",
+      body: formData,
     })
       .then((response) => response.json())
       .then((data) => {
         if (data.success) {
-          setStatus('Facial verification successful!');
-          localStorage.setItem("userId",data.user_id)
-          navigate("/first_level")
+          setStatus("Facial verification successful!");
+          localStorage.setItem("userId", data.user_id);
+          navigate("/first_level");
         } else {
-          setStatus('Facial verification failed. Try again.');
+          setStatus("Facial verification failed. Try again.");
         }
       })
       .catch((error) => {
-        console.error('Error during fetch:', error);
-        setStatus('Error during submission.');
+        console.error("Error during fetch:", error);
+        setStatus("Error during submission.");
       });
+  };
+
+  // Helper function to convert base64 to Blob
+  const dataURLtoBlob = (dataUrl) => {
+    const [metadata, base64Data] = dataUrl.split(",");
+    const mime = metadata.match(/:(.*?);/)[1];
+    const binary = atob(base64Data);
+    const length = binary.length;
+    const buffer = new ArrayBuffer(length);
+    const view = new Uint8Array(buffer);
+    for (let i = 0; i < length; i++) {
+      view[i] = binary.charCodeAt(i);
+    }
+    return new Blob([buffer], { type: mime });
   };
 
   return (
